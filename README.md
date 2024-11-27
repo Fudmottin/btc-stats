@@ -31,6 +31,13 @@ You can install Boost via Homebrew:
 ```bash
 brew install boost
 ```
+On Raspberry Pi, you need to do the following to get boost:
+
+```bash
+sudo apt install libboost1.81-tools-dev
+sudo apt install libboost1.81-all-dev
+sudo apt install libboost-json1.81-dev
+```
 
 ### 4. **Bitcoin Core Full Node (for RPC access)**
 This program requires access to a running Bitcoin Core-compatible full node. The node must have the following enabled:
@@ -42,12 +49,22 @@ You can run your own Bitcoin Core node or use an external provider, but make sur
 
 ## Building the Project
 
-Clone the repository.
+### 1. Clone the repository:
 
 ```bash
 git clone https://github.com/Fudmottin/btc-stats.git
 cd btc-stats
+```
+
+### 2. Initialize and update the submodules:
+
+```bash
 git submodule update --init
+```
+
+### 3. Create the build directory and compile the project:
+
+```bash
 mkdir build
 cd build
 cmake ..
