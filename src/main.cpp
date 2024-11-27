@@ -23,6 +23,8 @@ namespace po = boost::program_options;
 namespace http = boost::beast::http;
 using base64 = cppcodec::base64_rfc4648;
 
+const std::string GENESIS_BLOCK_HASH = "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f";
+
 std::string make_rpc_request(const std::string& method, const json::value& params, int id = 1) {
     json::object request;
     request["jsonrpc"] = "2.0";
@@ -105,7 +107,7 @@ int main(int argc, char* argv[]) {
             ("port", po::value<std::string>(&port)->required(), "Bitcoin node port")
             ("user", po::value<std::string>(&user)->required(), "RPC username")
             ("password", po::value<std::string>(&password)->required(), "RPC password")
-            ("blockhash", po::value<std::string>(&block_hash)->required(), "Block hash");
+            ("blockhash", po::value<std::string>(&block_hash)->default_value(GENESIS_BLOCK_HASH), "Block hash (optional)");
 
         po::variables_map vm;
         po::store(po::parse_command_line(argc, argv, desc), vm);
