@@ -4,6 +4,8 @@
 #include <locale>
 #include <string>
 #include <ctime>
+#include <thread>
+#include <chrono>
 
 #include <boost/asio.hpp>
 #include <boost/json.hpp>
@@ -73,15 +75,13 @@ std::string rpc_call(const std::string& host, const std::string& port,
     // Parse the JSON response
     try {
         auto json_response = boost::json::parse(res.body());
-        std::cout << "Parsed Response: " << json_response << std::endl;
+        // std::cout << "Parsed Response: " << json_response << std::endl;
     } catch (const std::exception& e) {
         std::cerr << "JSON Parse Error: " << e.what() << std::endl;
         std::cerr << "Response body: " << res.body() << std::endl;
         throw e;
     }
 
-    // Print and return the response body
-    std::cout << res.body() << std::endl;
     return res.body();
 }
 
@@ -135,27 +135,32 @@ int main(int argc, char* argv[]) {
         }
         po::notify(vm);
 
-        // Construct JSON-RPC request for `getblockheader`
-        json::array params;
-        params.emplace_back(block_hash);
-        params.emplace_back(true);
-        std::string rpc_request = make_rpc_request("getblockheader", params);
+        for (int i = 0; i < 10; ++i) {
+            if (block_hash.size() == 0) break;
 
-        // Perform the RPC call
-        std::string rpc_response = rpc_call(host, port, user, password, rpc_request);
+            // Construct JSON-RPC request for `getblockheader`
+            json::array params;
+            params.emplace_back(block_hash);
+            params.emplace_back(true);
+            std::string rpc_request = make_rpc_request("getblockheader", params);
 
-        // Parse response
-        json::value response_json = json::parse(rpc_response);
-        if (response_json.as_object().contains("error") && !response_json.at("error").is_null()) {
-            throw std::runtime_error("RPC Error: " + serialize(response_json.at("error")));
+            // Perform the RPC call
+            std::string rpc_response = rpc_call(host, port, user, password, rpc_request);
+
+            // Parse response
+            json::value response_json = json::parse(rpc_response);
+            if (response_json.as_object().contains("error") && !response_json.at("error").is_null()) {
+                throw std::runtime_error("RPC Error: " + serialize(response_json.at("error")));
+            }
+
+            json::object result = response_json.at("result").as_object();
+            BlockHeader block_header(result);
+
+            // Print block header
+            std::cout << format_blockheader(block_header) << "\n";
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            block_hash = block_header.nextblockhash();
         }
-
-        json::object result = response_json.at("result").as_object();
-        BlockHeader block_header(result);
-
-        // Print block header
-        std::cout << format_blockheader(block_header);
-
     } catch (const std::exception& e) {
         std::cerr << "Error: " << e.what() << "\n";
         return 1;
