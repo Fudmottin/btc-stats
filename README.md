@@ -45,7 +45,9 @@ You can run your own Bitcoin Core node or use an external provider, but make sur
 Clone the repository.
 
 ```bash
+git clone https://github.com/Fudmottin/btc-stats.git
 cd btc-stats
+git submodule update --init
 mkdir build
 cd build
 cmake ..
