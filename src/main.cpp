@@ -63,6 +63,23 @@ std::string rpc_call(const std::string& host, const std::string& port,
     http::response<http::string_body> res;
     http::read(socket, buffer, res);
 
+    // Check the HTTP status code
+    if (res.result() != boost::beast::http::status::ok) {
+        std::cerr << "Error: HTTP " << res.result_int() << " - " << res.reason() << std::endl;
+        std::cerr << "Response body: " << res.body() << std::endl;
+        throw std::runtime_error("HTTP Response not OK.");
+    }
+
+    // Parse the JSON response
+    try {
+        auto json_response = boost::json::parse(res.body());
+        std::cout << "Parsed Response: " << json_response << std::endl;
+    } catch (const std::exception& e) {
+        std::cerr << "JSON Parse Error: " << e.what() << std::endl;
+        std::cerr << "Response body: " << res.body() << std::endl;
+        throw e;
+    }
+
     // Print and return the response body
     std::cout << res.body() << std::endl;
     return res.body();
