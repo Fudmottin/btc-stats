@@ -71,3 +71,8 @@ const std::string& BlockHeader::nextblockhash() const noexcept {
     return nextblockhash_;
 }
 
+// Define the comparison operator
+bool BlockHeader::operator<(const BlockHeader& other) const noexcept {
+    return height_ < other.height_;
+}
+
