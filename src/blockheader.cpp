@@ -23,6 +23,20 @@ BlockHeader::BlockHeader(const boost::json::object& json)
     difficulty_ = difficulty;
 }
 
+BlockHeader::BlockHeader(
+    uint32_t height, uint32_t nTx, uint32_t bits, double difficulty,
+    std::time_t time, std::time_t mediantime,
+    std::string hash, std::string nextblockhash
+)
+    : height_(height),
+      nTx_(nTx),
+      bits_(bits),
+      difficulty_(difficulty),
+      time_(time),
+      mediantime_(mediantime),
+      hash_(std::move(hash)),
+      nextblockhash_(std::move(nextblockhash)) {}
+
 BlockHeader::~BlockHeader() = default;
 
 const std::string& BlockHeader::hash() const noexcept {

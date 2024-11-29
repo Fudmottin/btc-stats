@@ -6,6 +6,7 @@
 #include <ctime>
 #include <thread>
 #include <chrono>
+#include <vector>
 
 #include <boost/asio.hpp>
 #include <boost/json.hpp>
@@ -17,6 +18,7 @@
 #include <cppcodec/base64_default_rfc4648.hpp>
 
 #include "blockheader.hpp"
+#include "file.hpp"
 
 namespace asio = boost::asio;
 using asio::ip::tcp;
@@ -114,12 +116,16 @@ std::string format_blockheader(const BlockHeader& bh) {
 }
 
 int main(int argc, char* argv[]) {
+    std::vector<BlockHeader> block_headers;
+
     try {
         // Parse command-line arguments
-        std::string host, port, user, password, block_hash;
+        std::string host, port, user, password, block_hash, cache_file = "";
         po::options_description desc("Options");
         desc.add_options()
             ("help,h", "Display help message")
+            ("cache", po::value<std::string>(&cache_file)->default_value(cache_file), 
+                "Cached Bitcoin block header data (optional)")
             ("host", po::value<std::string>(&host)->required(), "Bitcoin node host")
             ("port", po::value<std::string>(&port)->required(), "Bitcoin node port")
             ("user", po::value<std::string>(&user)->required(), "RPC username")
@@ -160,6 +166,8 @@ int main(int argc, char* argv[]) {
             std::cout << format_blockheader(block_header) << "\n";
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
             block_hash = block_header.nextblockhash();
+
+            block_headers.push_back(block_header);
         }
     } catch (const std::exception& e) {
         std::cerr << "Error: " << e.what() << "\n";
