@@ -26,8 +26,8 @@ public:
     uint32_t nTx() const noexcept;
     const std::string& nextblockhash() const noexcept;
 
-    // Comparison operator to make BlockHeader sortable by height_
     bool operator<(const BlockHeader& other) const noexcept;
+    bool operator==(const BlockHeader& other) const noexcept;
 
 private:
     uint32_t height_;

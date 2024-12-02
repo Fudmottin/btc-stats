@@ -7,6 +7,8 @@
 #include <thread>
 #include <chrono>
 #include <vector>
+#include <algorithm>
+#include <filesystem>
 
 #include <boost/asio.hpp>
 #include <boost/json.hpp>
@@ -115,17 +117,28 @@ std::string format_blockheader(const BlockHeader& bh) {
     return oss.str();
 }
 
+template <typename T, typename Pred>
+T* if_in_vector(std::vector<T>& vec, Pred pred) {
+    if (vec.empty()) return nullptr;
+    auto it = std::find_if(vec.begin(), vec.end(), pred);
+    return (it != vec.end()) ? &vec.back() : nullptr;
+}
+
 int main(int argc, char* argv[]) {
     std::vector<BlockHeader> block_headers;
+    std::string cache_file = "";
+    int max_blocks = 10; // Maximum blocks to fetch from the node
 
     try {
         // Parse command-line arguments
-        std::string host, port, user, password, block_hash, cache_file = "";
+        std::string host, port, user, password, block_hash;
         po::options_description desc("Options");
         desc.add_options()
             ("help,h", "Display help message")
             ("cache", po::value<std::string>(&cache_file)->default_value(cache_file), 
                 "Cached Bitcoin block header data (optional)")
+            ("maxblocks,m", po::value<int>(&max_blocks)->default_value(max_blocks),
+                "Maximum number of blocks to fetch from the node (optional)")
             ("host", po::value<std::string>(&host)->required(), "Bitcoin node host")
             ("port", po::value<std::string>(&port)->required(), "Bitcoin node port")
             ("user", po::value<std::string>(&user)->required(), "RPC username")
@@ -141,7 +154,21 @@ int main(int argc, char* argv[]) {
         }
         po::notify(vm);
 
-        for (int i = 0; i < 10; ++i) {
+        if (cache_file != "" && std::filesystem::exists(cache_file)) {
+            block_headers = read_csv(cache_file);
+            for (auto& bh : block_headers)
+                std::cout << format_blockheader(bh) << "\n";
+            std::cout << "\n";
+            std::cout << "------------------------------------------------------------------------\n\n";
+        }
+
+        BlockHeader *blockheader = if_in_vector(block_headers, [&block_hash](const BlockHeader& bh) {
+            return bh.hash() == block_hash;
+        });
+
+        if (blockheader) block_hash = blockheader->nextblockhash();
+
+        for (int i = 0; i < max_blocks; ++i) {
             if (block_hash.size() == 0) break;
 
             // Construct JSON-RPC request for `getblockheader`
@@ -167,8 +194,18 @@ int main(int argc, char* argv[]) {
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
             block_hash = block_header.nextblockhash();
 
-            block_headers.push_back(block_header);
+            if (block_header.nextblockhash() != "")
+                block_headers.push_back(block_header);
         }
+        if (cache_file != "") {
+            std::cout << "sorting...\n";
+            std::sort(block_headers.begin(), block_headers.end());
+            auto it = std::unique(block_headers.begin(), block_headers.end());
+            block_headers.erase(it, block_headers.end());
+        }
+        std::cout << "writing file " << cache_file << "\n";
+        write_csv(cache_file, block_headers);
+        std::cout << "file written\n";
     } catch (const std::exception& e) {
         std::cerr << "Error: " << e.what() << "\n";
         return 1;
