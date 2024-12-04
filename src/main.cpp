@@ -155,10 +155,8 @@ int main(int argc, char* argv[]) {
         po::notify(vm);
 
         if (cache_file != "" && std::filesystem::exists(cache_file)) {
+            std::cout << "reading " << cache_file << " ...\n";
             block_headers = read_csv(cache_file);
-            for (auto& bh : block_headers)
-                std::cout << format_blockheader(bh) << "\n";
-            std::cout << "\n";
             std::cout << "------------------------------------------------------------------------\n\n";
         }
 
@@ -167,6 +165,8 @@ int main(int argc, char* argv[]) {
         });
 
         if (blockheader) block_hash = blockheader->nextblockhash();
+
+        std::cout << "fetching data from node if necessary...\n";
 
         for (int i = 0; i < max_blocks; ++i) {
             if (block_hash.size() == 0) break;
@@ -191,7 +191,7 @@ int main(int argc, char* argv[]) {
 
             // Print block header
             std::cout << format_blockheader(block_header) << "\n";
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            // std::this_thread::sleep_for(std::chrono::milliseconds(100));
             block_hash = block_header.nextblockhash();
 
             if (block_header.nextblockhash() != "")
